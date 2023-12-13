@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Statistic by link</title>
+</head>
+<body>
+    <table border="2">
+        <caption>LinkOffer Table</caption>
+        <tr>
+            <td>id</td>
+            <td>link</td>
+            <td>naviBar</td>
+            <td>offer</td>
+        </tr>
+        {% for link in links %}
+            <tr>
+                <td>{{ link.id }}</td>
+                <td>{{ link.link }}</td>
+                <td>{{ link.naviBar }}</td>
+                <td>{{ link.offer }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

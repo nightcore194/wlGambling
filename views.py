@@ -1,13 +1,13 @@
 import json, requests
 from flask import Flask, request, render_template
 from models import *
+from settings import DB_DESTINITION
 
 app = Flask(__name__)
 # configure the SQLite database, relative to the app instance folder
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///linkBuyersDB.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_DESTINITION}"
 db.init_app(app)
-with app.app_context():
-    db.create_all()
+migrate.init_app(app)
 
 @app.route('/')
 def mainPage():
@@ -16,19 +16,18 @@ def mainPage():
 @app.route('/link/create', methods=["GET","POST"])
 def addLink(): # inserting link, that affiliated with buyers
     if request.method == 'POST':
-        linkoffer = LinkOffer(
+        db.session.add(LinkOffer(
             link=request.form['link'],
             naviBar=True if request.form['naviBar'] == 'on' else False,
             offer=request.form['offer']
-        )
-        db.session.add(linkoffer)
+        ))
         db.session.commit()
     return render_template("addLink.html")
 
 @app.route('/link/get')
 def getLink():# getting all existing links
-    links = db.session.execute(db.select(LinkOffer).order_by(LinkOffer.link)).scalars()
-    return links
+    links = db.session.query(LinkOffer)
+    return render_template("getLink.html", links=links)
 
 @app.route('/getReferrer')
 def getReferrer():  # sending request to App store API and getting response
@@ -60,19 +59,20 @@ def actionPostback():
 
 @app.route('/statistic', methods=['GET', 'POST'])
 def statistic():
+    LinkOffer.query.filter_by(link='1').count()
     # getting a data from db
-    stat_by_action = {"click": db.session.execute(db.select(db.count(LinkStatistic)).where(LinkStatistic.action == "click")),
-                      "install": db.session.execute(db.select(db.count(LinkStatistic)).where(LinkStatistic.action == "install")),
-                      "reg": db.session.execute(db.select(db.count(LinkStatistic)).where(LinkStatistic.action == "reg")),
-                      "dep": db.session.execute(db.select(db.count(LinkStatistic)).where(LinkStatistic.action == "dep"))}
+    stat_by_action = {"click": db.session.query(LinkStatistic).filter_by(action="click").count(),
+                      "install": db.session.query(LinkStatistic).query.filter_by(action="install").count(),
+                      "reg": db.session.query(LinkStatistic).query.filter_by(action="reg").count(),
+                      "dep": db.session.query(LinkStatistic).query.filter_by(action="dep").count()}
     # make a filter
     if request.method == "POST":
         stat_by_action = {
-            "click": db.session.execute(db.select(db.count(LinkStatistic)).where(LinkStatistic.action == "click" and LinkStatistic.linkOffer == request.form['link_id'])),
-            "install": db.session.execute(db.select(db.count(LinkStatistic)).where(LinkStatistic.action == "install" and LinkStatistic.linkOffer == request.form['link_id'])),
-            "reg": db.session.execute(db.select(db.count(LinkStatistic)).where(LinkStatistic.action == "reg" and LinkStatistic.linkOffer == request.form['link_id'])),
-            "dep": db.session.execute(db.select(db.count(LinkStatistic)).where(LinkStatistic.action == "dep" and LinkStatistic.linkOffer == request.form['link_id']))}
-    return render_template("statLink.html", stat=stat_by_action)
+            "click": db.session.query(LinkStatistic).query.filter_by(action="dep", linkoffer=request.form['link_id']).count(),
+            "install": db.session.query(LinkStatistic).query.filter_by(action="install", linkoffer=request.form['link_id']).count(),
+                      "reg": db.session.query(LinkStatistic).query.filter_by(action="reg", linkoffer=request.form['link_id']).count(),
+                      "dep": db.session.query(LinkStatistic).query.filter_by(action="dep", linkoffer=request.form['link_id']).count()}
+    return render_template("getLink.html", stats=stat_by_action)
 
 if __name__ == '__main__':
     app.run()
