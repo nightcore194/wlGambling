@@ -9,7 +9,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_DESTINITION}"
 db.init_app(app)
 migrate.init_app(app)
 
-@app.route('/')
+@app.route('/') # main page
 def mainPage():
     return render_template("index.html")
 
@@ -35,9 +35,9 @@ def getReferrer():  # sending request to App store API and getting response
     # getting request arguments
     ip = request.args.get("ip", type=str)
     # sending request to App store API
-    # TODO
+    # TODO https://developer.apple.com/documentation/appstoreconnectapi/power_and_performance_metrics_and_logs
     # handle response of App store API
-    # TODO
+    # TODO 
     # formatting data
     # TODO
     # formatting body of response
